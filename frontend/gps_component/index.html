@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  html, body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+  button {
+    background-color: #121212;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  button:hover { background-color: #121212; }
+  button:disabled {
+    background-color: #c0c0c0;
+    cursor: not-allowed;
+  }
+  #status {
+    margin-left: 10px;
+    font-size: 13px;
+    color: #555;
+  }
+</style>
+</head>
+<body>
+  <button id="gps-btn">📍 Use My Current Location</button>
+  <span id="gps-status"></span>
+
+  <script>
+    // ── Streamlit component helpers ──
+    const sendToStreamlit = (value) => {
+      window.parent.postMessage({
+        type: "streamlit:setComponentValue",
+        value: value,
+      }, "*");
+    };
+
+    const setFrameHeight = (height) => {
+      window.parent.postMessage({
+        type: "streamlit:setFrameHeight",
+        height: height,
+      }, "*");
+    };
+
+    // Tell Streamlit the component is ready (required for rendering)
+    window.parent.postMessage({ type: "streamlit:componentReady" }, "*");
+
+    // Report height on load so Streamlit knows we're ready
+    setFrameHeight(45);
+
+    const btn = document.getElementById('gps-btn');
+    const status = document.getElementById('gps-status');
+
+    btn.addEventListener('click', function() {
+      if (!navigator.geolocation) {
+        status.textContent = 'Geolocation not supported.';
+        status.style.color = 'red';
+        setFrameHeight(45);
+        sendToStreamlit({error: 'Geolocation not supported by this browser.'});
+        return;
+      }
+      status.textContent = 'Getting location...';
+      status.style.color = '#0e6ba8';
+      btn.disabled = true;
+      setFrameHeight(45);
+
+      navigator.geolocation.getCurrentPosition(
+        function(position) {
+          status.textContent = '✅ Location found!';
+          status.style.color = 'green';
+          setFrameHeight(45);
+          sendToStreamlit({
+            lat: position.coords.latitude,
+            lon: position.coords.longitude,
+            acc: position.coords.accuracy
+          });
+        },
+        function(error) {
+          btn.disabled = false;
+          let msg = 'Unable to retrieve location.';
+          if (error.code === 1) msg = 'Permission denied. Please allow location access.';
+          if (error.code === 2) msg = 'Location unavailable.';
+          if (error.code === 3) msg = 'Timed out.';
+          status.textContent = msg;
+          status.style.color = 'red';
+          setFrameHeight(45);
+          sendToStreamlit({error: msg});
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      );
+    });
+  </script>
+</body>
+</html>
+
