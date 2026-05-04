@@ -1,4 +1,4 @@
-# 🚦 Traffic Route App
+# 🚦 SynthPath
 
 A Streamlit-based web application that helps users find driving routes between two locations, view real-time traffic estimates, and save their search history. No API keys are required — it uses free, open-source services (OpenStreetMap / Nominatim and OSRM).
 
